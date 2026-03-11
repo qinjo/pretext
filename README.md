@@ -107,6 +107,7 @@ Pages:
 - `/columns.html` — three-column userland reflow demo built from one line layout pass
 - `/contour.html` — variable-width contour demo built on `layoutNextLine()`
 - `/editorial.html` — anchored-shape editorial layout demo built from repeated `layoutNextLine()` calls
+- `/sync.html` — three independently wrapped panes that stay anchored to the same text cursor while you scroll any one of them
 - `/accuracy.html` — sweep across fonts, sizes, widths, i18n texts
 - `/benchmark.html` — performance comparison
 - `/bubbles.html` — bubble shrinkwrap demo
