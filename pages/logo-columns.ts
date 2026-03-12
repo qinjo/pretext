@@ -98,15 +98,34 @@ async function makeImageMask(src: string, width: number, height: number): Promis
   return { width, height, rows }
 }
 
-function getMaskInterval(mask: ImageMask, rect: Rect, y: number): Interval | null {
-  if (y < rect.y || y >= rect.y + rect.height) return null
-  const rowIndex = Math.max(0, Math.min(mask.height - 1, Math.floor(y - rect.y)))
-  const row = mask.rows[rowIndex]
-  if (row === null) return null
-  if (row === undefined) return null
+function getMaskIntervalForBand(
+  mask: ImageMask,
+  rect: Rect,
+  bandTop: number,
+  bandBottom: number,
+  horizontalPadding: number,
+  verticalPadding: number,
+): Interval | null {
+  if (bandBottom <= rect.y || bandTop >= rect.y + rect.height) return null
+
+  const startRow = Math.max(0, Math.floor(bandTop - rect.y - verticalPadding))
+  const endRow = Math.min(mask.height - 1, Math.ceil(bandBottom - rect.y + verticalPadding))
+
+  let left = mask.width
+  let right = -1
+
+  for (let rowIndex = startRow; rowIndex <= endRow; rowIndex++) {
+    const row = mask.rows[rowIndex]
+    if (row === null || row === undefined) continue
+    if (row.left < left) left = row.left
+    if (row.right > right) right = row.right
+  }
+
+  if (right < left) return null
+
   return {
-    left: rect.x + row.left,
-    right: rect.x + row.right,
+    left: rect.x + left - horizontalPadding,
+    right: rect.x + right + horizontalPadding,
   }
 }
 
@@ -136,9 +155,11 @@ function subtractIntervals(base: Interval, intervals: Interval[]): Interval[] {
 function renderColumn(
   prepared: PreparedTextWithSegments,
   region: Rect,
+  font: string,
   lineHeight: number,
   maskRect: Rect,
   mask: ImageMask,
+  maskPadding: { horizontal: number, vertical: number },
   lineClassName: string,
   side: 'left' | 'right',
 ): void {
@@ -148,9 +169,17 @@ function renderColumn(
   while (true) {
     if (lineTop + lineHeight > region.y + region.height) break
 
-    const sampleY = lineTop + lineHeight * 0.52
+    const bandTop = lineTop
+    const bandBottom = lineTop + lineHeight
     const blocked: Interval[] = []
-    const maskInterval = getMaskInterval(mask, maskRect, sampleY)
+    const maskInterval = getMaskIntervalForBand(
+      mask,
+      maskRect,
+      bandTop,
+      bandBottom,
+      maskPadding.horizontal,
+      maskPadding.vertical,
+    )
     if (maskInterval !== null) blocked.push(maskInterval)
 
     const slots = subtractIntervals(
@@ -174,6 +203,8 @@ function renderColumn(
     el.textContent = line.text
     el.style.left = `${Math.round(slot.left)}px`
     el.style.top = `${Math.round(lineTop)}px`
+    el.style.font = font
+    el.style.lineHeight = `${lineHeight}px`
     stage.appendChild(el)
 
     cursor = line.end
@@ -196,7 +227,7 @@ async function render(): Promise<void> {
   stage.style.minHeight = `${pageHeight}px`
 
   const gutter = Math.round(Math.max(56, pageWidth * 0.055))
-  const centerGap = Math.round(Math.max(96, pageWidth * 0.085))
+  const centerGap = Math.round(Math.max(54, pageWidth * 0.058))
   const headlineTop = Math.round(Math.max(48, pageHeight * 0.07))
   const headlineWidth = Math.round(Math.min(pageWidth - gutter * 2, pageWidth * 0.62))
   const copyTop = headlineTop + Math.round(Math.max(174, pageWidth * 0.15))
@@ -219,8 +250,8 @@ async function render(): Promise<void> {
 
   const openaiSize = Math.round(Math.max(260, Math.min(420, pageWidth * 0.28)))
   const openaiRect: Rect = {
-    x: leftRegion.x - Math.round(openaiSize * 0.3),
-    y: pageHeight - gutter - openaiSize + Math.round(openaiSize * 0.06),
+    x: leftRegion.x - Math.round(openaiSize * 0.16),
+    y: pageHeight - gutter - openaiSize + Math.round(openaiSize * 0.02),
     width: openaiSize,
     height: openaiSize,
   }
@@ -257,9 +288,11 @@ async function render(): Promise<void> {
   renderColumn(
     getPrepared(LEFT_COPY, font),
     leftRegion,
+    font,
     lineHeight,
     openaiRect,
     openaiMask,
+    { horizontal: Math.round(lineHeight * 0.75), vertical: Math.round(lineHeight * 0.3) },
     'line line--left',
     'left',
   )
@@ -267,9 +300,11 @@ async function render(): Promise<void> {
   renderColumn(
     getPrepared(RIGHT_COPY, font),
     rightRegion,
+    font,
     lineHeight,
     claudeRect,
     claudeMask,
+    { horizontal: Math.round(lineHeight * 0.68), vertical: Math.round(lineHeight * 0.28) },
     'line line--right',
     'right',
   )
