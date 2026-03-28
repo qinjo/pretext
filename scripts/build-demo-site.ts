@@ -10,6 +10,7 @@ const entrypoints = [
   'pages/demos/dynamic-layout.html',
   'pages/demos/editorial-engine.html',
   'pages/demos/masonry/index.html',
+  'pages/demos/rich-note.html',
   'pages/demos/variable-typographic-ascii.html',
 ]
 
@@ -33,6 +34,7 @@ const targets = [
   { source: 'dynamic-layout.html', target: 'dynamic-layout/index.html' },
   { source: 'editorial-engine.html', target: 'editorial-engine/index.html' },
   { source: 'masonry/index.html', target: 'masonry/index.html' },
+  { source: 'rich-note.html', target: 'rich-note/index.html' },
   { source: 'variable-typographic-ascii.html', target: 'variable-typographic-ascii/index.html' },
 ]
 
