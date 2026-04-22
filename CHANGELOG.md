@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.0.6 - 2026-04-22
+
+### Added
+
+- Numeric CSS-pixel `letterSpacing` support on `prepare()`, `prepareWithSegments()`, and rich-inline items (#108, #156).
 
 ### Fixed
 
